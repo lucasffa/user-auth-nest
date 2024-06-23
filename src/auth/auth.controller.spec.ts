@@ -2,7 +2,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto, LoginResponseDto, LogoutDto, LogoutResponseDto } from './dto/auth.dto';
+import { LoginDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UnauthorizedException } from '@nestjs/common';
 
@@ -57,20 +57,28 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('should return a message on successful logout', async () => {
-      const logoutDto: LogoutDto = { uuid: 'user-uuid' };
+      const authHeader = 'Bearer valid-token';
       const logoutResponse: LogoutResponseDto = { message: 'Successfully logged out' };
 
       jest.spyOn(authService, 'logout').mockResolvedValue(logoutResponse);
 
-      expect(await authController.logout(logoutDto)).toBe(logoutResponse);
+      expect(await authController.logout(authHeader)).toBe(logoutResponse);
+    });
+
+    it('should throw UnauthorizedException if token is invalid', async () => {
+      const authHeader = 'Bearer invalid-token';
+
+      jest.spyOn(authService, 'logout').mockRejectedValue(new UnauthorizedException('Invalid token'));
+
+      await expect(authController.logout(authHeader)).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if user not found during logout', async () => {
-      const logoutDto: LogoutDto = { uuid: 'invalid-uuid' };
+      const authHeader = 'Bearer valid-token';
 
       jest.spyOn(authService, 'logout').mockRejectedValue(new UnauthorizedException('User not found'));
 
-      await expect(authController.logout(logoutDto)).rejects.toThrow(UnauthorizedException);
+      await expect(authController.logout(authHeader)).rejects.toThrow(UnauthorizedException);
     });
   });
 });

@@ -1,7 +1,6 @@
-// src/users/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, BeforeUpdate } from 'typeorm';
-import { Role } from '../../common/enums/roles.enum';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../../common/enums/roles.enum';
 
 @Entity()
 export class User {
@@ -20,6 +19,7 @@ export class User {
     @Column({
         type: 'enum',
         enum: Role,
+        default: Role.PATIENT
     })
     role: Role;
 
@@ -44,14 +44,20 @@ export class User {
     @Column({ type: 'timestamp', nullable: true })
     lastUpdateAt: Date;
 
+    tempPassword: string;
+
     @BeforeInsert()
-    async hashPassword() {
-        this.password = await bcrypt.hash(this.password, 10);
+    async hashPasswordBeforeInsert() {
+        const salt = await bcrypt.genSalt();
+        this.password = await bcrypt.hash(this.password, salt);
     }
 
     @BeforeUpdate()
-    async updateTimestamp() {
-        this.lastUpdateAt = new Date();
+    async hashPasswordBeforeUpdate() {
+        if (this.tempPassword) {
+            const salt = await bcrypt.genSalt();
+            this.password = await bcrypt.hash(this.tempPassword, salt);
+        }
     }
 
     async validatePassword(password: string): Promise<boolean> {
@@ -60,7 +66,6 @@ export class User {
 
     deactivate() {
         this.isActive = false;
-        this.isDeleted = false;
         this.lastActiveStatusAt = new Date();
     }
 

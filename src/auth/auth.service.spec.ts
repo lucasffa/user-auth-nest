@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto, LoginResponseDto, LogoutDto, LogoutResponseDto } from './dto/auth.dto';
+import { LoginDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
 import { User } from '../users/entities/user.entity';
 import { UnauthorizedException } from '@nestjs/common';
 import { Role } from '../common/enums/roles.enum';
@@ -29,6 +29,7 @@ describe('AuthService', () => {
           provide: JwtService,
           useValue: {
             sign: jest.fn(),
+            verify: jest.fn(),
           },
         },
       ],
@@ -82,25 +83,38 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('should return a message on successful logout', async () => {
-      const logoutDto: LogoutDto = { uuid: 'user-uuid' };
+      const token = 'valid-token';
       const user: User = new User();
+      user.uuid = 'user-uuid';
       user.setLastLogout = jest.fn();
 
+      jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: user.uuid });
       jest.spyOn(usersService, 'findEntityById').mockResolvedValue(user);
 
-      const result: LogoutResponseDto = await authService.logout(logoutDto);
+      const result: LogoutResponseDto = await authService.logout(token);
 
       expect(result).toEqual({ message: 'Successfully logged out' });
       expect(user.setLastLogout).toHaveBeenCalled();
       expect(usersService.save).toHaveBeenCalledWith(user);
     });
 
-    it('should throw UnauthorizedException if user not found during logout', async () => {
-      const logoutDto: LogoutDto = { uuid: 'invalid-uuid' };
+    it('should throw UnauthorizedException if token is invalid', async () => {
+      const token = 'invalid-token';
 
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
+        throw new UnauthorizedException('Invalid token');
+      });
+
+      await expect(authService.logout(token)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if user not found during logout', async () => {
+      const token = 'valid-token';
+
+      jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: 'invalid-uuid' });
       jest.spyOn(usersService, 'findEntityById').mockResolvedValue(null);
 
-      await expect(authService.logout(logoutDto)).rejects.toThrow(UnauthorizedException);
+      await expect(authService.logout(token)).rejects.toThrow(UnauthorizedException);
     });
   });
 });

@@ -1,4 +1,3 @@
-// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
@@ -28,13 +27,20 @@ export class AuthService {
     return { token: this.jwtService.sign(payload) };
   }
 
-  async logout(logoutDto: LogoutDto): Promise<LogoutResponseDto> {
-    const user = await this.usersService.findEntityById(logoutDto.uuid);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+  async logout(token: string): Promise<LogoutResponseDto> {
+    try {
+      const decodedToken = this.jwtService.verify(token);
+      const uuid = decodedToken.uuid;
+
+      const user = await this.usersService.findEntityById(uuid);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      user.setLastLogout();
+      await this.usersService.save(user);
+      return { message: 'Successfully logged out' };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
     }
-    user.setLastLogout();
-    await this.usersService.save(user);
-    return { message: 'Successfully logged out' };
   }
 }

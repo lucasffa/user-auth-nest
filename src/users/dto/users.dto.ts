@@ -1,6 +1,6 @@
 // src/users/dto/users.dto.ts
 
-import { IsEmail, IsString, IsEnum, IsUUID, IsBoolean, IsDate } from 'class-validator';
+import { IsEmail, IsString, IsEnum, IsUUID, IsBoolean, IsDate, IsOptional } from 'class-validator';
 import { Role } from '../../common/enums/roles.enum';
 
 export class CreateUserDto {
@@ -12,9 +12,6 @@ export class CreateUserDto {
 
   @IsString()
   password: string;
-
-  @IsEnum(Role)
-  role: Role;
 }
 
 export class CreateUserResponseDto {
@@ -71,16 +68,20 @@ export class ReadUserResponseDto {
 }
 
 export class UpdateUserDto {
-  @IsUUID()
-  uuid: string;
-
   @IsString()
+  @IsOptional()
   name?: string;
 
   @IsEmail()
+  @IsOptional()
   email?: string;
+  
+  @IsString()
+  @IsOptional()
+  password?: string;
 
   @IsEnum(Role)
+  @IsOptional()
   role?: Role;
 }
 
@@ -94,8 +95,6 @@ export class UpdateUserResponseDto {
 }
 
 export class DeleteUserDto {
-  @IsUUID()
-  uuid: string;
 }
 
 export class DeleteUserResponseDto {
