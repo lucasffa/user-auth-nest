@@ -22,7 +22,7 @@ describe('AuthService', () => {
   let jwtService: JwtService;
   let configService: ConfigService;
 
-  beforeEach(async () => {
+  const createTestingModule = async (enableTokenBlacklisting: boolean) => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -45,7 +45,7 @@ describe('AuthService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'ENABLE_TOKEN_BLACKLISTING') return true;
+              if (key === 'ENABLE_TOKEN_BLACKLISTING') return enableTokenBlacklisting;
               if (key === 'USE_REDIS') return false;
               return null;
             }),
@@ -70,7 +70,10 @@ describe('AuthService', () => {
     usersService = module.get<UsersService>(UsersService);
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
+  };
 
+  beforeEach(async () => {
+    await createTestingModule(true);
     jest.clearAllMocks();
   });
 
@@ -162,20 +165,16 @@ describe('AuthService', () => {
       jest.spyOn(usersService, 'findEntityById').mockResolvedValue(user);
 
       // Enable token blacklisting
-      jest.spyOn(configService, 'get').mockImplementation((key: string) => {
-        if (key === 'ENABLE_TOKEN_BLACKLISTING') return true;
-        return null;
-      });
+      await createTestingModule(true);
       await authService.logout(token);
       expect(mockTokenBlacklistService.blacklistToken).toHaveBeenCalledWith(token, 3600);
 
       jest.clearAllMocks();
 
       // Disable token blacklisting
-      jest.spyOn(configService, 'get').mockImplementation((key: string) => {
-        if (key === 'ENABLE_TOKEN_BLACKLISTING') return false;
-        return null;
-      });
+      await createTestingModule(false);
+      jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: user.uuid, exp: Math.floor(Date.now() / 1000) + 3600 });
+      jest.spyOn(usersService, 'findEntityById').mockResolvedValue(user);
       await authService.logout(token);
       expect(mockTokenBlacklistService.blacklistToken).not.toHaveBeenCalled();
     });
