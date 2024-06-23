@@ -1,4 +1,4 @@
-//  src/auth/auth.service.ts
+// src/auth/auth.service.ts
 import { Injectable, Inject, UnauthorizedException, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
@@ -14,7 +14,7 @@ export class AuthService {
     @Optional()
     @Inject(TOKEN_BLACKLIST)
     private readonly tokenBlacklistService: ITokenBlacklist | null,
-  ) { }
+  ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.usersService.findByEmail(loginDto.email);
@@ -37,6 +37,9 @@ export class AuthService {
 
   async logout(token: string): Promise<LogoutResponseDto> {
     try {
+      console.log('ENABLE_TOKEN_BLACKLISTING:', process.env.ENABLE_TOKEN_BLACKLISTING);
+      console.log('tokenBlacklistService:', this.tokenBlacklistService);
+      
       const decodedToken = this.jwtService.verify(token);
       const uuid = decodedToken.uuid;
 

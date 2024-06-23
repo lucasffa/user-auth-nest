@@ -8,7 +8,6 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { TOKEN_BLACKLIST } from './constants';
 import { LocalTokenBlacklistService } from './services/local-token-blacklist.service';
-import { RedisTokenBlacklistService } from './services/redis-token-blacklist.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -37,13 +36,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         if (!configService.get<boolean>('ENABLE_TOKEN_BLACKLISTING')) {
           return null;
         }
-        return configService.get<boolean>('USE_REDIS')
-          ? new RedisTokenBlacklistService()
-          : new LocalTokenBlacklistService();
+        return new LocalTokenBlacklistService();
       },
       inject: [ConfigService],
     },
   ],
   controllers: [AuthController],
 })
-export class AuthModule { }
+export class AuthModule {}

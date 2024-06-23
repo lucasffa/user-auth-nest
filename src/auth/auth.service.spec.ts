@@ -1,4 +1,5 @@
 // src/auth/auth.service.spec.ts
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -164,6 +165,7 @@ describe('AuthService', () => {
       jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: user.uuid, exp: Math.floor(Date.now() / 1000) + 3600 });
       jest.spyOn(usersService, 'findEntityById').mockResolvedValue(user);
 
+      console.log('Testing with ENABLE_TOKEN_BLACKLISTING=true');
       // Enable token blacklisting
       await createTestingModule(true);
       await authService.logout(token);
@@ -171,6 +173,7 @@ describe('AuthService', () => {
 
       jest.clearAllMocks();
 
+      console.log('Testing with ENABLE_TOKEN_BLACKLISTING=false');
       // Disable token blacklisting
       await createTestingModule(false);
       jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: user.uuid, exp: Math.floor(Date.now() / 1000) + 3600 });
