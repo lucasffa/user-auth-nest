@@ -9,7 +9,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.usersService.findByEmail(loginDto.email);
@@ -30,6 +30,9 @@ export class AuthService {
 
   async logout(logoutDto: LogoutDto): Promise<LogoutResponseDto> {
     const user = await this.usersService.findEntityById(logoutDto.uuid);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
     user.setLastLogout();
     await this.usersService.save(user);
     return { message: 'Successfully logged out' };
