@@ -101,7 +101,7 @@ describe('UsersController', () => {
       jest.spyOn(service, 'update').mockResolvedValue(updateUserResponse);
 
       expect(await controller.update(uuidParam, updateUserDto)).toBe(updateUserResponse);
-      expect(service.update).toHaveBeenCalledWith(updateUserDto);
+      expect(service.update).toHaveBeenCalledWith(uuidParam, updateUserDto);
     });
 
     it('should throw NotFoundException if user is not found', async () => {
@@ -115,6 +115,7 @@ describe('UsersController', () => {
       await expect(controller.update(uuidParam, updateUserDto)).rejects.toThrow(NotFoundException);
     });
   });
+
 
   describe('delete', () => {
     it('should delete a user', async () => {

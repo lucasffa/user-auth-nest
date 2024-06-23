@@ -1,22 +1,25 @@
-// src/auth/services/local-token-blacklist.service.ts
+// src/auth/services/redis-token-blacklist.service.ts
 import { Injectable } from '@nestjs/common';
 import { ITokenBlacklist } from '../interfaces/token-blacklist.interface';
+import Redis from 'ioredis';
 
 @Injectable()
-export class LocalTokenBlacklistService implements ITokenBlacklist {
-  private blacklist: Map<string, number> = new Map();
+export class RedisTokenBlacklistService implements ITokenBlacklist {
+  private redisClient: Redis;
+
+  constructor() {
+    this.redisClient = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    });
+  }
 
   async blacklistToken(token: string, expirationTime: number): Promise<void> {
-    const expiry = Date.now() + expirationTime * 1000;
-    this.blacklist.set(token, expiry);
+    await this.redisClient.set(token, 'blacklisted', 'EX', expirationTime);
   }
 
   async isBlacklisted(token: string): Promise<boolean> {
-    const expiry = this.blacklist.get(token);
-    if (expiry && Date.now() < expiry) {
-      return true;
-    }
-    this.blacklist.delete(token);
-    return false;
+    const result = await this.redisClient.get(token);
+    return result === 'blacklisted';
   }
 }

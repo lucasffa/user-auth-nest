@@ -1,13 +1,19 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+//  src/auth/auth.service.ts
+import { Injectable, Inject, UnauthorizedException, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { LoginDto, LoginResponseDto, LogoutDto, LogoutResponseDto } from './dto/auth.dto';
+import { TOKEN_BLACKLIST } from './constants';
+import { ITokenBlacklist } from './interfaces/token-blacklist.interface';
+import { LoginDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    @Optional()
+    @Inject(TOKEN_BLACKLIST)
+    private readonly tokenBlacklistService: ITokenBlacklist | null,
   ) { }
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
@@ -24,7 +30,9 @@ export class AuthService {
     await this.usersService.save(user);
 
     const payload = { uuid: user.uuid, role: user.role };
-    return { token: this.jwtService.sign(payload) };
+    const token = this.jwtService.sign(payload);
+
+    return { token };
   }
 
   async logout(token: string): Promise<LogoutResponseDto> {
@@ -36,8 +44,15 @@ export class AuthService {
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
+
       user.setLastLogout();
       await this.usersService.save(user);
+
+      if (this.tokenBlacklistService) {
+        const expirationTime = decodedToken.exp - Math.floor(Date.now() / 1000);
+        await this.tokenBlacklistService.blacklistToken(token, expirationTime);
+      }
+
       return { message: 'Successfully logged out' };
     } catch (error) {
       throw new UnauthorizedException('Invalid token');

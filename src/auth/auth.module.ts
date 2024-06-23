@@ -1,16 +1,18 @@
-// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { TOKEN_BLACKLIST } from './constants';
+import { LocalTokenBlacklistService } from './services/local-token-blacklist.service';
+import { RedisTokenBlacklistService } from './services/redis-token-blacklist.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    ConfigModule,
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
@@ -21,8 +23,27 @@ import { JwtStrategy } from './jwt.strategy';
       }),
       inject: [ConfigService],
     }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    {
+      provide: TOKEN_BLACKLIST,
+      useFactory: (configService: ConfigService) => {
+        if (!configService.get<boolean>('ENABLE_TOKEN_BLACKLISTING')) {
+          return null;
+        }
+        return configService.get<boolean>('USE_REDIS')
+          ? new RedisTokenBlacklistService()
+          : new LocalTokenBlacklistService();
+      },
+      inject: [ConfigService],
+    },
+  ],
   controllers: [AuthController],
 })
 export class AuthModule { }
