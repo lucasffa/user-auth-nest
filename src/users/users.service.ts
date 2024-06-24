@@ -100,7 +100,7 @@ export class UsersService {
 
   async activate(uuid: string): Promise<void> {
     try {
-      const user = await this.userRepository.findOne({ where: { uuid, isActive: false } });
+      const user = await this.userRepository.findOne({ where: { uuid, isDeleted: false, isActive: false } });
       if (!user) {
         throw new NotFoundException('User not found');
       }

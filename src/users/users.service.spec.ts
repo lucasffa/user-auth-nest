@@ -4,7 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
-import { CreateUserDto, CreateUserResponseDto, ReadUserDto, ReadUserResponseDto, UpdateUserDto, UpdateUserResponseDto, DeleteUserDto, DeleteUserResponseDto } from './dto/users.dto';
+import { CreateUserDto, CreateUserResponseDto, ReadUserDto, ReadUserResponseDto, UpdateUserDto, UpdateUserResponseDto, DeleteUserResponseDto } from './dto/users.dto';
 import { NotFoundException, ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { Role } from '../common/enums/roles.enum';
 
@@ -100,7 +100,7 @@ describe('UsersService', () => {
       const user = new User();
       user.uuid = 'uuid';
       const uuidParam = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockResolvedValue(user);
+      jest.spyOn(repository, 'findOne').mockResolvedValue(user);
       jest.spyOn(repository, 'save').mockResolvedValue(user);
 
       const result = await service.update(user.uuid, updateUserDto);
@@ -110,7 +110,7 @@ describe('UsersService', () => {
     it('should throw NotFoundException if user is not found', async () => {
       const updateUserDto: UpdateUserDto = { name: 'John Doe', email: 'john@example.com' };
       const uuidParam = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new NotFoundException());
+      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
 
       await expect(service.update(uuidParam, updateUserDto)).rejects.toThrow(NotFoundException);
     });
@@ -118,7 +118,7 @@ describe('UsersService', () => {
     it('should throw InternalServerErrorException if an error occurs', async () => {
       const updateUserDto: UpdateUserDto = { name: 'John Doe', email: 'john@example.com' };
       const uuidParam = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new Error());
+      jest.spyOn(repository, 'findOne').mockRejectedValue(new Error());
 
       await expect(service.update(uuidParam, updateUserDto)).rejects.toThrow(InternalServerErrorException);
     });
@@ -129,7 +129,7 @@ describe('UsersService', () => {
       const user = new User();
       const uuidParam = 'uuid';
       user.uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockResolvedValue(user);
+      jest.spyOn(repository, 'findOne').mockResolvedValue(user);
       jest.spyOn(repository, 'save').mockResolvedValue(user);
 
       const result = await service.delete(uuidParam);
@@ -138,14 +138,14 @@ describe('UsersService', () => {
 
     it('should throw NotFoundException if user is not found', async () => {
       const uuidParam = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new NotFoundException());
+      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
 
       await expect(service.delete(uuidParam)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw InternalServerErrorException if an error occurs', async () => {
       const uuidParam = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new Error());
+      jest.spyOn(repository, 'findOne').mockRejectedValue(new Error());
 
       await expect(service.delete(uuidParam)).rejects.toThrow(InternalServerErrorException);
     });
@@ -156,24 +156,24 @@ describe('UsersService', () => {
       const uuid = 'uuid';
       const user = new User();
       user.uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockResolvedValue(user);
+      jest.spyOn(repository, 'findOne').mockResolvedValue(user);
       jest.spyOn(repository, 'save').mockResolvedValue(user);
 
       await service.deactivate(uuid);
-      expect(service.findEntityById).toHaveBeenCalledWith(uuid);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { uuid, isDeleted: false } });
       expect(repository.save).toHaveBeenCalledWith(user);
     });
 
     it('should throw NotFoundException if user is not found', async () => {
       const uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new NotFoundException());
+      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
 
       await expect(service.deactivate(uuid)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw InternalServerErrorException if an error occurs', async () => {
       const uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new Error());
+      jest.spyOn(repository, 'findOne').mockRejectedValue(new Error());
 
       await expect(service.deactivate(uuid)).rejects.toThrow(InternalServerErrorException);
     });
@@ -184,24 +184,24 @@ describe('UsersService', () => {
       const uuid = 'uuid';
       const user = new User();
       user.uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockResolvedValue(user);
+      jest.spyOn(repository, 'findOne').mockResolvedValue(user);
       jest.spyOn(repository, 'save').mockResolvedValue(user);
 
       await service.activate(uuid);
-      expect(service.findEntityById).toHaveBeenCalledWith(uuid);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { uuid, isDeleted: false, isActive: false } });
       expect(repository.save).toHaveBeenCalledWith(user);
     });
 
     it('should throw NotFoundException if user is not found', async () => {
       const uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new NotFoundException());
+      jest.spyOn(repository, 'findOne').mockResolvedValue(null);
 
       await expect(service.activate(uuid)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw InternalServerErrorException if an error occurs', async () => {
       const uuid = 'uuid';
-      jest.spyOn(service, 'findEntityById').mockRejectedValue(new Error());
+      jest.spyOn(repository, 'findOne').mockRejectedValue(new Error());
 
       await expect(service.activate(uuid)).rejects.toThrow(InternalServerErrorException);
     });
@@ -216,7 +216,7 @@ describe('UsersService', () => {
 
       const result = await service.findByEmail(email);
       expect(result).toEqual(user);
-      expect(repository.findOne).toHaveBeenCalledWith({ where: { email } });
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { email, isDeleted: false } });
     });
 
     it('should throw NotFoundException if user is not found', async () => {
