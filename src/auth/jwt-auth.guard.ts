@@ -10,18 +10,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         private readonly jwtService: JwtService,
     ) {
         super();
-        console.log("JwtAuthGuard constructor, this.tokenBlacklistService: ", this.tokenBlacklistService);
     }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
         const token = this.extractTokenFromHeader(request);
-        console.log("In JwtAuthGuard.canActivate, token: ", token);
-        console.log("In JwtAuthGuard.canActivate, this.tokenBlacklistService: ", this.tokenBlacklistService);
 
         if (this.tokenBlacklistService) {
             const blackListResult = await this.tokenBlacklistService.isBlacklisted(token);
-            console.log("In JwtAuthGuard.canActivate, this.tokenBlacklistService.isBlacklisted(token): ", blackListResult);
             if (blackListResult) {
                 throw new UnauthorizedException('Token is blacklisted');
             }

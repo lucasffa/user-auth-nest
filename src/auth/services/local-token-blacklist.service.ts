@@ -9,7 +9,6 @@ export class LocalTokenBlacklistService implements ITokenBlacklist {
     async blacklistToken(token: string, expirationTime: number): Promise<void> {
         const expiry = Date.now() + expirationTime * 1000;
         const result = await this.blacklist.set(token, expiry);
-        console.log('In LocalTokenBlacklistService.blacklistToken, result from this.blacklist.set(token, expiry): ', result);
     }
 
 

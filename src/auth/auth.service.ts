@@ -13,7 +13,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     @Inject(LocalTokenBlacklistService) private readonly tokenBlacklistService: LocalTokenBlacklistService,
-  ) {}
+  ) { }
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.usersService.findByEmail(loginDto.email);
@@ -36,9 +36,6 @@ export class AuthService {
 
   async logout(token: string): Promise<LogoutResponseDto> {
     try {
-      console.log('ENABLE_TOKEN_BLACKLISTING:', process.env.ENABLE_TOKEN_BLACKLISTING);
-      console.log('tokenBlacklistService:', this.tokenBlacklistService);
-      
       const decodedToken = this.jwtService.verify(token);
       const uuid = decodedToken.uuid;
 
@@ -51,10 +48,8 @@ export class AuthService {
       await this.usersService.save(user);
 
       if (this.tokenBlacklistService) {
-        console.log('In AuthService.logout, this.tokenBlacklistService exists.')
         const expirationTime = decodedToken.exp - Math.floor(Date.now() / 1000);
         await this.tokenBlacklistService.blacklistToken(token, expirationTime);
-        console.log('tokenBlacklistService:', this.tokenBlacklistService);
       }
 
       return { message: 'Successfully logged out' };

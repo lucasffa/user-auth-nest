@@ -2,6 +2,7 @@
 
 import { IsEmail, IsString, IsEnum, IsUUID, IsBoolean, IsDate, IsOptional } from 'class-validator';
 import { Role } from '../../common/enums/roles.enum';
+import { Exclude } from 'class-transformer';
 
 export class CreateUserDto {
   @IsString()

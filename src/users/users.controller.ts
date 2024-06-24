@@ -9,12 +9,12 @@ import { Role } from '../common/enums/roles.enum';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+    constructor(private readonly usersService: UsersService) { }
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto): Promise<CreateUserResponseDto> {
-    return this.usersService.create(createUserDto);
-  }
+    @Post()
+    async create(@Body() createUserDto: CreateUserDto): Promise<CreateUserResponseDto> {
+        return this.usersService.create(createUserDto);
+    }
 
     @Get(':uuid')
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +32,6 @@ export class UsersController {
 
     @Delete(':uuid')
     async delete(@Param('uuid') uuidParam: string): Promise<DeleteUserResponseDto> {
-        console.log('UsersController.delete, uuidParam: ', uuidParam);
         return this.usersService.delete(uuidParam);
     }
 
