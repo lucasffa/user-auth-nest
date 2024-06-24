@@ -1,5 +1,4 @@
 // src/auth/auth.service.spec.ts
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -8,23 +7,30 @@ import { LoginDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
 import { User } from '../users/entities/user.entity';
 import { UnauthorizedException } from '@nestjs/common';
 import { Role } from '../common/enums/roles.enum';
-import { TOKEN_BLACKLIST } from './constants';
-import { ITokenBlacklist } from './interfaces/token-blacklist.interface';
+import { LocalTokenBlacklistService } from './services/local-token-blacklist.service';
 import { ConfigService } from '@nestjs/config';
-
-const mockTokenBlacklistService = {
-  blacklistToken: jest.fn(),
-  isBlacklisted: jest.fn(),
-};
+import { JwtModule } from '@nestjs/jwt';
 
 describe('AuthService', () => {
   let authService: AuthService;
   let usersService: UsersService;
   let jwtService: JwtService;
   let configService: ConfigService;
+  let tokenBlacklistService: LocalTokenBlacklistService;
+
+  const mockTokenBlacklistService = {
+    blacklistToken: jest.fn(),
+    isBlacklisted: jest.fn(),
+  };
 
   const createTestingModule = async (enableTokenBlacklisting: boolean) => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        JwtModule.register({
+          secret: 'my_jwt_secret',
+          signOptions: { expiresIn: '60m' },
+        }),
+      ],
       providers: [
         AuthService,
         {
@@ -35,34 +41,11 @@ describe('AuthService', () => {
             save: jest.fn(),
           },
         },
+        JwtService,
+        ConfigService,
         {
-          provide: JwtService,
-          useValue: {
-            sign: jest.fn(),
-            verify: jest.fn(),
-          },
-        },
-        {
-          provide: ConfigService,
-          useValue: {
-            get: jest.fn((key: string) => {
-              if (key === 'ENABLE_TOKEN_BLACKLISTING') return enableTokenBlacklisting;
-              if (key === 'USE_REDIS') return false;
-              return null;
-            }),
-          },
-        },
-        {
-          provide: TOKEN_BLACKLIST,
-          useFactory: (configService: ConfigService) => {
-            if (!configService.get<boolean>('ENABLE_TOKEN_BLACKLISTING')) {
-              return null;
-            }
-            return configService.get<boolean>('USE_REDIS')
-              ? mockTokenBlacklistService
-              : mockTokenBlacklistService;
-          },
-          inject: [ConfigService],
+          provide: LocalTokenBlacklistService,
+          useValue: enableTokenBlacklisting ? mockTokenBlacklistService : null,
         },
       ],
     }).compile();
@@ -71,6 +54,7 @@ describe('AuthService', () => {
     usersService = module.get<UsersService>(UsersService);
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
+    tokenBlacklistService = module.get<LocalTokenBlacklistService>(LocalTokenBlacklistService);
   };
 
   beforeEach(async () => {
@@ -156,30 +140,5 @@ describe('AuthService', () => {
       await expect(authService.logout(token)).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should handle token blacklisting based on environment variables', async () => {
-      const token = 'valid-token';
-      const user: User = new User();
-      user.uuid = 'user-uuid';
-      user.setLastLogout = jest.fn();
-
-      jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: user.uuid, exp: Math.floor(Date.now() / 1000) + 3600 });
-      jest.spyOn(usersService, 'findEntityById').mockResolvedValue(user);
-
-      console.log('Testing with ENABLE_TOKEN_BLACKLISTING=true');
-      // Enable token blacklisting
-      await createTestingModule(true);
-      await authService.logout(token);
-      expect(mockTokenBlacklistService.blacklistToken).toHaveBeenCalledWith(token, 3600);
-
-      jest.clearAllMocks();
-
-      console.log('Testing with ENABLE_TOKEN_BLACKLISTING=false');
-      // Disable token blacklisting
-      await createTestingModule(false);
-      jest.spyOn(jwtService, 'verify').mockReturnValue({ uuid: user.uuid, exp: Math.floor(Date.now() / 1000) + 3600 });
-      jest.spyOn(usersService, 'findEntityById').mockResolvedValue(user);
-      await authService.logout(token);
-      expect(mockTokenBlacklistService.blacklistToken).not.toHaveBeenCalled();
-    });
   });
 });

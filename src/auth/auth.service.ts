@@ -5,15 +5,14 @@ import { UsersService } from '../users/users.service';
 import { TOKEN_BLACKLIST } from './constants';
 import { ITokenBlacklist } from './interfaces/token-blacklist.interface';
 import { LoginDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
+import { LocalTokenBlacklistService } from './services/local-token-blacklist.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    @Optional()
-    @Inject(TOKEN_BLACKLIST)
-    private readonly tokenBlacklistService: ITokenBlacklist | null,
+    @Inject(LocalTokenBlacklistService) private readonly tokenBlacklistService: LocalTokenBlacklistService,
   ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
@@ -52,8 +51,10 @@ export class AuthService {
       await this.usersService.save(user);
 
       if (this.tokenBlacklistService) {
+        console.log('In AuthService.logout, this.tokenBlacklistService exists.')
         const expirationTime = decodedToken.exp - Math.floor(Date.now() / 1000);
         await this.tokenBlacklistService.blacklistToken(token, expirationTime);
+        console.log('tokenBlacklistService:', this.tokenBlacklistService);
       }
 
       return { message: 'Successfully logged out' };

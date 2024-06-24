@@ -2,9 +2,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { JwtService } from '@nestjs/jwt';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { CreateUserDto, CreateUserResponseDto, ReadUserDto, ReadUserResponseDto, UpdateUserDto, UpdateUserResponseDto, DeleteUserDto, DeleteUserResponseDto } from './dto/users.dto';
 import { NotFoundException, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { Role } from '../common/enums/roles.enum';
+import { LocalTokenBlacklistService } from '../auth/services/local-token-blacklist.service';
+import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -12,6 +18,12 @@ describe('UsersController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        JwtModule.register({
+          secret: 'test_secret',
+          signOptions: { expiresIn: '60m' },
+        }),
+      ],
       controllers: [UsersController],
       providers: [
         {
@@ -25,8 +37,26 @@ describe('UsersController', () => {
             activate: jest.fn(),
           },
         },
+        JwtService,
+        ConfigService,
+        {
+          provide: LocalTokenBlacklistService,
+          useValue: {
+            blacklistToken: jest.fn(),
+            isBlacklisted: jest.fn(),
+          },
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: jest.fn().mockReturnValue(true),
+      })
+      .overrideGuard(RolesGuard)
+      .useValue({
+        canActivate: jest.fn().mockReturnValue(true),
+      })
+      .compile();
 
     controller = module.get<UsersController>(UsersController);
     service = module.get<UsersService>(UsersService);
@@ -115,7 +145,6 @@ describe('UsersController', () => {
       await expect(controller.update(uuidParam, updateUserDto)).rejects.toThrow(NotFoundException);
     });
   });
-
 
   describe('delete', () => {
     it('should delete a user', async () => {

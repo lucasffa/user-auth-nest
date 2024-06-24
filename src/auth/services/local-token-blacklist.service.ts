@@ -4,19 +4,24 @@ import { ITokenBlacklist } from '../interfaces/token-blacklist.interface';
 
 @Injectable()
 export class LocalTokenBlacklistService implements ITokenBlacklist {
-    private blacklist: Map<string, number> = new Map();
+    private blacklist = new Map<string, number>();
 
     async blacklistToken(token: string, expirationTime: number): Promise<void> {
         const expiry = Date.now() + expirationTime * 1000;
-        this.blacklist.set(token, expiry);
+        const result = await this.blacklist.set(token, expiry);
+        console.log('In LocalTokenBlacklistService.blacklistToken, result from this.blacklist.set(token, expiry): ', result);
     }
+
 
     async isBlacklisted(token: string): Promise<boolean> {
         const expiry = this.blacklist.get(token);
-        if (expiry && Date.now() < expiry) {
-            return true;
+        if (!expiry) {
+            return false;
         }
-        this.blacklist.delete(token);
-        return false;
+        if (Date.now() > expiry) {
+            this.blacklist.delete(token);
+            return false;
+        }
+        return true;
     }
 }

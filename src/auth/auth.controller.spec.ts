@@ -3,8 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LoginDto, LoginResponseDto, LogoutResponseDto } from './dto/auth.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
 import { UnauthorizedException } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -12,6 +13,15 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        JwtModule.register({
+          secret: 'test_secret',
+          signOptions: { expiresIn: '60m' },
+        }),
+        ConfigModule.forRoot({
+          isGlobal: true,
+        }),
+      ],
       controllers: [AuthController],
       providers: [
         {
