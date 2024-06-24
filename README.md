@@ -1,73 +1,260 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# User Management and Authentication API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This project is a RESTful API for managing users and authentication, built using NestJS, TypeORM, and JWT for authentication. 
+The API supports user creation, reading, updating, deleting, and managing user activation and deactivation. 
+It includes role-based access control to secure endpoints based on user roles.
+This is a good boilerplate for your new project, somehow. :)
 
-## Description
+## Table of Contents
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [User Management and Authentication API](#user-management-and-authentication-api)
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+  - [Project Structure](#project-structure)
+  - [Installation](#installation)
+  - [Environment Variables](#environment-variables)
+  - [Running the Application](#running-the-application)
+  - [Testing](#testing)
+  - [API Endpoints](#api-endpoints)
+    - [Authentication](#authentication)
+    - [Users](#users)
+  - [Entities](#entities)
+    - [User](#user)
+  - [DTOs](#dtos)
+  - [Guards and Decorators](#guards-and-decorators)
+    - [JwtAuthGuard](#jwtauthguard)
+    - [RolesGuard](#rolesguard)
+    - [Roles Decorator](#roles-decorator)
+  - [Services](#services)
+    - [AuthService](#authservice)
+    - [UsersService](#usersservice)
+  - [Controllers](#controllers)
+    - [AuthController](#authcontroller)
+    - [UsersController](#userscontroller)
+  - [Error Handling](#error-handling)
+  - [Logging](#logging)
+  - [Stay in touch with me :)](#stay-in-touch-with-me-)
+
+
+## Features
+
+- **User Management**: Create, read, update, delete, activate, deactivate & soft delete users.
+- **Authentication**: Log in and log out users using JWT.
+- **Role-Based Access Control**: Secure endpoints based on user roles (e.g., Admin, Manager, Operator, Patient).
+- **Token Blacklisting**: Blacklist tokens upon user logout to prevent reuse, using local cache on RAM.
+- **Data Validation**: Validate incoming data using DTOs and class-validator.
+- **Testing**: Extensive unit and integration tests using Jest.
+
+## Getting Started
+
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+
+### Prerequisites
+
+Ensure you have the following installed on your machine:
+
+- Node.js (>= v20.14.0)
+- npm (>= 10.7.0)
+- PostgreSQL (>= 14.12)
+
+## Project Structure
+
+The project structure follows the standard NestJS application structure:
+
+```
+src/
+├── auth/
+│   ├── dto/
+│   │   └── auth.dto.ts
+│   ├── interfaces/
+│   │   └── token-blacklist.interface.ts
+│   ├── services/
+│   │   ├── local-token-blacklist.service.ts
+│   │   └── redis-token-blacklist.service.ts
+│   ├── auth.controller.spec.ts
+│   ├── auth.controller.ts
+│   ├── auth.module.ts
+│   ├── auth.service.spec.ts
+│   ├── auth.service.ts
+│   ├── constants.ts
+│   ├── jwt-auth.guard.ts
+│   ├── jwt.strategy.ts
+├── common/
+│   ├── decorators/
+│   │   └── roles.decorator.ts
+│   ├── enums/
+│   │   └── roles.enum.ts
+│   ├── guards/
+│   │   └── roles.guard.ts
+├── users/
+│   ├── dto/
+│   │   └── users.dto.ts
+│   ├── entities/
+│   │   └── user.entity.ts
+│   ├── users.controller.spec.ts
+│   ├── users.controller.ts
+│   ├── users.module.ts
+│   ├── users.service.spec.ts
+│   ├── users.service.ts
+├── app.controller.spec.ts
+├── app.controller.ts
+├── app.module.ts
+├── app.service.ts
+├── main.ts
+test/
+├── app.e2e-spec.ts
+└── jest-e2e.json
+.env
+.eslintrc.js
+.gitignore
+.prettierrc
+nest-cli.json
+package-lock.json
+package.json
+README.md
+tsconfig.build.json
+tsconfig.json
+```
 
 ## Installation
 
-```bash
-$ npm install
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/lucasffa/user-auth-nest
+   cd user-auth-nest
+   ```
+
+2. Install the dependencies:
+
+   ```
+   npm install
+   ```
+
+## Environment Variables
+
+Create a `.env` file in the root directory and add the following environment variables:
+
+```
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=yourusername
+DATABASE_PASSWORD=yourpassword
+DATABASE_NAME=yourdbname
+JWT_SECRET=yourjwtsecret
+ENABLE_TOKEN_BLACKLISTING=true
 ```
 
-## Running the app
+## Running the Application
 
-```bash
-# development
-$ npm run start
+To run the application, use the following command:
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+npm run start:dev
 ```
 
-## Test
+This will start the application in development mode. The API will be available at `http://localhost:3000`.
 
-```bash
-# unit tests
-$ npm run test
+## Testing
 
-# e2e tests
-$ npm run test:e2e
+The application includes unit and integration tests using Jest. To run the tests, use the following command:
 
-# test coverage
-$ npm run test:cov
+```
+npm run test
 ```
 
-## Support
+For test coverage:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```
+npm run test:cov
+```
 
-## Stay in touch
+## API Endpoints
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Authentication
 
-## License
+- `POST /auth/login`: Log in a user and receive a JWT token.
+- `POST /auth/logout`: Log out a user by blacklisting the token.
 
-Nest is [MIT licensed](LICENSE).
+### Users
+
+- `POST /users`: Create a new user.
+- `GET /users/:uuid`: Retrieve a user by UUID.
+- `PUT /users/:uuid`: Update a user by UUID.
+- `DELETE /users/:uuid`: Soft delete a user by UUID.
+- `POST /users/deactivate/:uuid`: Deactivate a user by UUID.
+- `POST /users/activate/:uuid`: Activate a user by UUID.
+
+## Entities
+
+### User
+
+The `User` entity represents a user in the system. It includes fields for the user's UUID, name, email, password, role, and status (active or deleted).
+
+## DTOs
+
+Data Transfer Objects (DTOs) are used for data validation and transfer. They include:
+
+- `CreateUserDto`: For creating a new user.
+- `ReadUserDto`: For reading user data.
+- `UpdateUserDto`: For updating user data.
+- `DeleteUserDto`: For deleting a user.
+- `CreateUserResponseDto`: Response data after creating a user.
+- `ReadUserResponseDto`: Response data after reading a user.
+- `UpdateUserResponseDto`: Response data after updating a user.
+- `DeleteUserResponseDto`: Response data after deleting a user.
+
+## Guards and Decorators
+
+### JwtAuthGuard
+
+A guard that implements JWT authentication to protect routes.
+
+### RolesGuard
+
+A guard that implements role-based access control to restrict access to routes based on user roles.
+
+### Roles Decorator
+
+A custom decorator to specify roles allowed to access certain endpoints.
+
+## Services
+
+### AuthService
+
+Handles authentication logic, including login and logout. It verifies user credentials and generates JWT tokens.
+
+### UsersService
+
+Handles user management logic, including creation, reading, updating, deleting, activating, and deactivating users. It interacts with the User repository to perform database operations.
+
+## Controllers
+
+### AuthController
+
+Handles authentication-related endpoints, including login and logout.
+
+### UsersController
+
+Handles user-related endpoints, including creating, reading, updating, deleting, activating, and deactivating users. It uses guards and decorators to enforce authentication and role-based access control.
+
+## Error Handling
+
+The application uses NestJS's built-in exception filters for error handling. Custom exceptions like `NotFoundException`, `ConflictException`, and `InternalServerErrorException` are used to handle specific error scenarios. Ensure to catch errors properly in your service methods and throw appropriate exceptions.
+
+## Logging
+
+The application uses NestJS's built-in logging functionality. Custom log messages are added in services and controllers for debugging and auditing purposes. You can customize the logging level and format in your `main.ts` file or by configuring the logger in the `app.module.ts`.
+
+
+## Stay in touch with me :)
+
+**Lucas de Almeida**
+
+- [LinkedIn](https://www.linkedin.com/in/lucasffa)
+- [GitHub](https://github.com/lucasffa)
