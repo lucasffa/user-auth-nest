@@ -1,3 +1,4 @@
+// src/auth/jwt-auth.guard.ts
 import { Injectable, ExecutionContext, UnauthorizedException, Inject, Optional } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalTokenBlacklistService } from './services/local-token-blacklist.service';
@@ -23,7 +24,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             }
         }
 
-        return super.canActivate(context) as boolean;
+        const result = (await super.canActivate(context)) as boolean;
+        const user = this.jwtService.verify(token);
+        request.user = user;
+
+        return result;
     }
 
     private extractTokenFromHeader(request: any): string {
