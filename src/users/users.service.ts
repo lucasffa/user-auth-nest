@@ -1,3 +1,4 @@
+// src/users/users.service.ts
 import { Injectable, NotFoundException, InternalServerErrorException, ConflictException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -37,6 +38,7 @@ export class UsersService {
     this.logger.logService(UsersService.name, `Finding user with UUID: ${readUserDto.uuid}`);
     try {
       const user = await this.userRepository.findOne({ where: { uuid: readUserDto.uuid, isDeleted: false } });
+      this.logger.logService(UsersService.name, `Found this user.name: ` + user.name);
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -44,6 +46,25 @@ export class UsersService {
       return new ReadUserResponseDto(user);
     } catch (error) {
       this.logger.errorService(UsersService.name, `Error finding user with UUID: ${readUserDto.uuid}`, error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Error retrieving user');
+    }
+  }
+
+  async findOneByUuid(uuid: string): Promise<ReadUserResponseDto> {
+    this.logger.logService(UsersService.name, `Finding user with UUID: ${uuid}`);
+    try {
+      const user = await this.userRepository.findOne({ where: { uuid, isDeleted: false } });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      this.logger.logService(UsersService.name, `Found this user.name: ` + user.name);
+      delete user.password;
+      return new ReadUserResponseDto(user);
+    } catch (error) {
+      this.logger.errorService(UsersService.name, `Error finding user with UUID: ${uuid}`, error);
       if (error instanceof NotFoundException) {
         throw error;
       }
@@ -170,7 +191,7 @@ export class UsersService {
   }
 
   async findEntityById(uuid: string): Promise<User> {
-    this.logger.logService(UsersService.name, `Finding user entity by UUID: ${uuid}`);
+    //this.logger.logService(UsersService.name, `Finding user entity by UUID: ${uuid}`);
     try {
       const user = await this.userRepository.findOne({ where: { uuid } });
       if (!user) {

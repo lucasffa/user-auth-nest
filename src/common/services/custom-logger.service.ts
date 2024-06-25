@@ -13,13 +13,13 @@ export class CustomLoggerService extends Logger implements LoggerService {
         return this.configService.get<string>('NODE_ENV') === 'development';
     }
 
-    private formatLog(context: string, method: string, requesterUuid: string, params: any, query: any, body: any): string {
-        return `${clc.yellow(`[${context}]`)} ${clc.cyan(`[${method}]`)} ${clc.magenta(`[${requesterUuid}]`)} | params: ${JSON.stringify(params)} | queries: ${JSON.stringify(query)} | body: ${JSON.stringify(body)}`;
+    private formatLog(context: string, method: string, requesterUuid: string, ip: string, params: any, query: any, body: any): string {
+        return `${clc.yellow(`[${context}]`)} ${clc.cyan(`[${method}]`)} ${clc.magenta(`[IP: ${ip}]`)} ${requesterUuid ? clc.magenta(`[UUID: ${requesterUuid}]`) : ''} | params: ${JSON.stringify(params)} | queries: ${JSON.stringify(query)} | body: ${JSON.stringify(body)}`;
     }
 
     logRequest(req: Request, context: string, method: string): void {
         if (this.isDevelopment()) {
-            const { user, body, params, query, originalUrl } = req;
+            const { user, body, params, query, originalUrl, ip } = req;
 
             const logPayload = {
                 timestamp: new Date().toISOString(),
@@ -27,12 +27,13 @@ export class CustomLoggerService extends Logger implements LoggerService {
                 method,
                 url: originalUrl,
                 requesterUuid: user?.uuid,
+                ip,
                 params,
                 query,
                 body,
             };
 
-            const formattedLog = this.formatLog(context, method, logPayload.requesterUuid, logPayload.params, logPayload.query, logPayload.body);
+            const formattedLog = this.formatLog(context, method, logPayload.requesterUuid, logPayload.ip, logPayload.params, logPayload.query, logPayload.body);
 
             this.log(formattedLog);
         }
@@ -40,7 +41,7 @@ export class CustomLoggerService extends Logger implements LoggerService {
 
     errorRequest(req: Request, context: string, method: string, error: any): void {
         if (this.isDevelopment()) {
-            const { user, body, params, query, originalUrl } = req;
+            const { user, body, params, query, originalUrl, ip } = req;
 
             const logPayload = {
                 timestamp: new Date().toISOString(),
@@ -48,13 +49,14 @@ export class CustomLoggerService extends Logger implements LoggerService {
                 method,
                 url: originalUrl,
                 requesterUuid: user?.uuid,
+                ip,
                 params,
                 query,
                 body,
                 error: error.message,
             };
 
-            const formattedLog = this.formatLog(context, method, logPayload.requesterUuid, logPayload.params, logPayload.query, logPayload.body);
+            const formattedLog = this.formatLog(context, method, logPayload.requesterUuid, logPayload.ip, logPayload.params, logPayload.query, logPayload.body);
 
             this.error(formattedLog);
         }
@@ -71,6 +73,14 @@ export class CustomLoggerService extends Logger implements LoggerService {
         if (this.isDevelopment()) {
             const formattedLog = `${clc.yellow(`[${context}]`)} | ${message} | error: ${error.message}`;
             this.error(formattedLog);
+        }
+    }
+
+    logRateLimitExceeded(req: Request, context: string, method: string): void {
+        if (this.isDevelopment()) {
+            const { user, ip, params, query, body } = req;
+            const formattedLog = `${clc.yellow(`[${context}]`)} ${clc.cyan(`[${method}]`)} ${clc.magenta(`[IP: ${ip}]`)} ${user?.uuid ? clc.magenta(`[UUID: ${user.uuid}]`) : ''} ${clc.xterm(202)('Rate limit exceeded')}`;
+            this.warn(formattedLog);
         }
     }
 }

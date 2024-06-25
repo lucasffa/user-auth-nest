@@ -106,3 +106,8 @@ export class DeleteUserResponseDto {
     this.message = message;
   }
 }
+
+export class ReadOwnUserDto {
+  @IsUUID()
+  uuid: string;
+}
