@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CustomLoggerService } from './common/services/custom-logger.service';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { APP_GUARD } from '@nestjs/core';
     UsersModule,
   ],
   providers: [
+    CustomLoggerService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

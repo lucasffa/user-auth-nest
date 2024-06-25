@@ -6,6 +6,7 @@ import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CustomLoggerService } from 'src/common/services/custom-logger.service';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ConfigModule,
   ],
   providers: [
-    UsersService
+    UsersService,
+    CustomLoggerService
   ],
   controllers: [UsersController],
   exports: [UsersService],
