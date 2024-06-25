@@ -20,7 +20,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
     ConfigModule,
   ],
-  providers: [UsersService],
+  providers: [
+    UsersService
+  ],
   controllers: [UsersController],
   exports: [UsersService],
 })

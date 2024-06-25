@@ -7,6 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/roles.enum';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
@@ -17,14 +18,12 @@ export class UsersController {
     }
 
     @Get(':uuid')
-    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.ADMIN, Role.MANAGER)
     async findOne(@Param() readUserDto: ReadUserDto): Promise<ReadUserResponseDto> {
         return this.usersService.findOne(readUserDto);
     }
 
     @Put(':uuid')
-    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.ADMIN, Role.MANAGER)
     async update(@Param('uuid') uuidParam: string, @Body() updateUserDto: UpdateUserDto): Promise<UpdateUserResponseDto> {
         return this.usersService.update(uuidParam, updateUserDto);
@@ -36,14 +35,12 @@ export class UsersController {
     }
 
     @Post('deactivate/:uuid')
-    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async deactivate(@Param('uuid') uuidParam: string): Promise<void> {
         return this.usersService.deactivate(uuidParam);
     }
 
     @Post('activate/:uuid')
-    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async activate(@Param('uuid') uuidParam: string): Promise<void> {
         return this.usersService.activate(uuidParam);

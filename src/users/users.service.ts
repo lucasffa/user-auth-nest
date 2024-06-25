@@ -1,8 +1,9 @@
+// src/users/users.service.ts
 import { Injectable, NotFoundException, InternalServerErrorException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import { CreateUserDto, CreateUserResponseDto, ReadUserDto, ReadUserResponseDto, UpdateUserDto, UpdateUserResponseDto, DeleteUserDto, DeleteUserResponseDto } from './dto/users.dto';
+import { CreateUserDto, CreateUserResponseDto, ReadUserDto, ReadUserResponseDto, UpdateUserDto, UpdateUserResponseDto, DeleteUserResponseDto } from './dto/users.dto';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +20,7 @@ export class UsersService {
       }
       const user = this.userRepository.create(createUserDto);
       await this.userRepository.save(user);
+      delete user.password;
       return new CreateUserResponseDto({ uuid: user.uuid });
     } catch (error) {
       if (error instanceof ConflictException) {
@@ -31,9 +33,11 @@ export class UsersService {
   async findOne(readUserDto: ReadUserDto): Promise<ReadUserResponseDto> {
     try {
       const user = await this.userRepository.findOne({ where: { uuid: readUserDto.uuid, isDeleted: false } });
+      console.log("UsersService.findOne, user: ", user);
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      delete user.password;
       return new ReadUserResponseDto(user);
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -49,6 +53,14 @@ export class UsersService {
       if (!user) {
         throw new NotFoundException('User not found');
       }
+
+      if (updateUserDto.email && updateUserDto.email !== user.email) {
+        const existingUser = await this.userRepository.findOne({ where: { email: updateUserDto.email } });
+        if (existingUser) {
+          throw new ConflictException('Email already in use');
+        }
+      }
+
       Object.assign(user, updateUserDto);
 
       if (updateUserDto.password) {
@@ -56,9 +68,10 @@ export class UsersService {
       }
 
       await this.userRepository.save(user);
+      delete user.password;
       return new UpdateUserResponseDto({ uuid: user.uuid });
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof NotFoundException || error instanceof ConflictException) {
         throw error;
       }
       throw new InternalServerErrorException('Error updating user');
@@ -100,7 +113,7 @@ export class UsersService {
 
   async activate(uuid: string): Promise<void> {
     try {
-      const user = await this.userRepository.findOne({ where: { uuid, isDeleted: false, isActive: false } });
+      const user = await this.userRepository.findOne({ where: { uuid, isActive: false } });
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -116,7 +129,11 @@ export class UsersService {
 
   async findByEmail(email: string): Promise<User> {
     try {
-      const user = await this.userRepository.findOne({ where: { email, isDeleted: false } });
+      const user = await this.userRepository.findOne({
+        where: { email, isDeleted: false },
+        select: ['uuid', 'name', 'email', 'password', 'role', 'isActive', 'isDeleted', 'lastActiveStatusAt', 'lastDeletionAt', 'lastLoginAt', 'lastLogoutAt', 'lastUpdateAt'],
+      });
+      console.log("UsersService.findByEmail, user: ", user);
       if (!user) {
         throw new NotFoundException('User not found');
       }
@@ -149,7 +166,6 @@ export class UsersService {
         throw error;
       }
       throw new InternalServerErrorException('Error retrieving user');
-
     }
   }
 }
