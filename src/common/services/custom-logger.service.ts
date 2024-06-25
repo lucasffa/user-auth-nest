@@ -1,6 +1,7 @@
 import { Injectable, Logger, LoggerService } from '@nestjs/common';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
+import * as clc from 'cli-color';
 
 @Injectable()
 export class CustomLoggerService extends Logger implements LoggerService {
@@ -10,6 +11,10 @@ export class CustomLoggerService extends Logger implements LoggerService {
 
     private isDevelopment(): boolean {
         return this.configService.get<string>('NODE_ENV') === 'development';
+    }
+
+    private formatLog(context: string, method: string, requesterUuid: string, params: any, query: any, body: any): string {
+        return `${clc.yellow(`[${context}]`)} ${clc.cyan(`[${method}]`)} ${clc.magenta(`[${requesterUuid}]`)} | params: ${JSON.stringify(params)} | queries: ${JSON.stringify(query)} | body: ${JSON.stringify(body)}`;
     }
 
     logRequest(req: Request, context: string, method: string): void {
@@ -27,7 +32,7 @@ export class CustomLoggerService extends Logger implements LoggerService {
                 body,
             };
 
-            const formattedLog = `[${context}] [${method}] [${logPayload.requesterUuid}] | params: ${JSON.stringify(logPayload.params)} | queries: ${JSON.stringify(logPayload.query)} | body: ${JSON.stringify(logPayload.body)}`;
+            const formattedLog = this.formatLog(context, method, logPayload.requesterUuid, logPayload.params, logPayload.query, logPayload.body);
 
             this.log(formattedLog);
         }
@@ -49,7 +54,7 @@ export class CustomLoggerService extends Logger implements LoggerService {
                 error: error.message,
             };
 
-            const formattedLog = `[${context}] [${method}] [${logPayload.requesterUuid}] | params: ${JSON.stringify(logPayload.params)} | queries: ${JSON.stringify(logPayload.query)} | body: ${JSON.stringify(logPayload.body)} | error: ${logPayload.error}`;
+            const formattedLog = this.formatLog(context, method, logPayload.requesterUuid, logPayload.params, logPayload.query, logPayload.body);
 
             this.error(formattedLog);
         }
@@ -57,27 +62,14 @@ export class CustomLoggerService extends Logger implements LoggerService {
 
     logService(context: string, message: string): void {
         if (this.isDevelopment()) {
-            const logPayload = {
-                timestamp: new Date().toISOString(),
-                context,
-                message,
-            };
-
-            const formattedLog = `[${context}] | ${message}`;
+            const formattedLog = `${clc.yellow(`[${context}]`)} | ${message}`;
             this.log(formattedLog);
         }
     }
 
     errorService(context: string, message: string, error: any): void {
         if (this.isDevelopment()) {
-            const logPayload = {
-                timestamp: new Date().toISOString(),
-                context,
-                message,
-                error: error.message,
-            };
-
-            const formattedLog = `[${context}] | ${message} | error: ${error.message}`;
+            const formattedLog = `${clc.yellow(`[${context}]`)} | ${message} | error: ${error.message}`;
             this.error(formattedLog);
         }
     }

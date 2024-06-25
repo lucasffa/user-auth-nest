@@ -1,4 +1,3 @@
-// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -36,11 +35,11 @@ import { CustomLoggerService } from './common/services/custom-logger.service';
     UsersModule,
   ],
   providers: [
-    CustomLoggerService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    CustomLoggerService,
   ],
 })
-export class AppModule { }
+export class AppModule {}
