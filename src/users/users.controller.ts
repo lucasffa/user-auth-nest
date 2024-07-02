@@ -10,6 +10,7 @@ import { Role } from '../common/enums/roles.enum';
 import { CustomLoggerService } from '../common/services/custom-logger.service';
 import { RateLimit } from '../common/decorators/rate-limit.decorator';
 import { RateLimitGuard } from '../common/guards/rate-limit.guard';
+import { Public } from 'src/common/decorators/public.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard, RateLimitGuard)
 @Controller('users')
@@ -19,6 +20,7 @@ export class UsersController {
         @Inject(CustomLoggerService) private readonly logger: CustomLoggerService,
     ) { }
 
+    @Public()
     @Post()
     @RateLimit(5)
     async create(@Req() req: Request, @Body() createUserDto: CreateUserDto): Promise<CreateUserResponseDto> {
