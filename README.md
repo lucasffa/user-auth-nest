@@ -141,13 +141,27 @@ tsconfig.json
 Create a `.env` file in the root directory and add the following environment variables:
 
 ```
+# .env
+NODE_ENV=development # or production
+
+## jwt
+JWT_SECRET=your_hardest_jwt_secret
+JWT_EXPIRES_IN=60m
+
+## rate limit
+RATE_LIMIT_WINDOW_TIME=60000
+RATE_LIMIT_SUPER_USER=3
+
+## db
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_USERNAME=yourusername
-DATABASE_PASSWORD=yourpassword
-DATABASE_NAME=yourdbname
-JWT_SECRET=yourjwtsecret
+DATABASE_USERNAME=anyuser
+DATABASE_PASSWORD=your_hardest_password
+DATABASE_NAME=db_yourdb
+
+## feature toggles
 ENABLE_TOKEN_BLACKLISTING=true
+
 ```
 
 ## Running the Application
